@@ -42,14 +42,14 @@ def EncoderImage(data_name, img_dim, embed_size, precomp_enc_type='basic', no_im
 
     return img_enc
 
-class EncoderImagePrecomp(nn.Module):
 
+class EncoderImagePrecomp(nn.Module):
     def __init__(self, img_dim, embed_size, no_imgnorm=False):
         super(EncoderImagePrecomp, self).__init__()
         self.embed_size = embed_size
         self.no_imgnorm = no_imgnorm
         self.fc_local = nn.Linear(img_dim, embed_size)
-        #self.fc_global = nn.Linear(img_dim, embed_size)
+        # self.fc_global = nn.Linear(img_dim, embed_size)
 
         self.init_weights()
 
@@ -61,22 +61,22 @@ class EncoderImagePrecomp(nn.Module):
         self.fc_local.weight.data.uniform_(-r, r)
         self.fc_local.bias.data.fill_(0)
 
-        #self.fc_global.weight.data.uniform_(-r, r)
-        #self.fc_global.bias.data.fill_(0)
+        # self.fc_global.weight.data.uniform_(-r, r)
+        # self.fc_global.bias.data.fill_(0)
 
     def forward(self, images):
         """Extract image feature vectors."""
         # assuming that the precomputed features are already l2-normalized
-        #img_global = images.mean(1)
-        #feat_global = self.fc_global(img_global)
+        # img_global = images.mean(1)
+        # feat_global = self.fc_global(img_global)
         feat_local = self.fc_local(images)
 
         # normalize in the joint embedding space
         if not self.no_imgnorm:
             feat_local = l2norm(feat_local, dim=-1)
-            #feat_global = l2norm(feat_global, dim=-1)
+            # feat_global = l2norm(feat_global, dim=-1)
 
-        return feat_local.mean(1), feat_local 
+        return feat_local.mean(1), feat_local
 
     def load_state_dict(self, state_dict):
         """Copies parameters. overwritting the default one to
@@ -90,29 +90,29 @@ class EncoderImagePrecomp(nn.Module):
 
         super(EncoderImagePrecomp, self).load_state_dict(new_state)
 
-class EncoderImageWeightNormPrecomp(nn.Module):
 
+class EncoderImageWeightNormPrecomp(nn.Module):
     def __init__(self, img_dim, embed_size, no_imgnorm=False):
         super(EncoderImageWeightNormPrecomp, self).__init__()
         self.embed_size = embed_size
         self.no_imgnorm = no_imgnorm
         self.fc_local = weight_norm(nn.Linear(img_dim, embed_size), dim=None)
-        #self.fc_global = weight_norm(nn.Linear(img_dim, embed_size), dim=None)
+        # self.fc_global = weight_norm(nn.Linear(img_dim, embed_size), dim=None)
 
     def forward(self, images):
         """Extract image feature vectors."""
         # assuming that the precomputed features are already l2-normalized
 
-        #img_global = images.mean(1)
-        #feat_global = self.fc_global(img_global)
+        # img_global = images.mean(1)
+        # feat_global = self.fc_global(img_global)
         feat_local = self.fc_local(images)
 
         # normalize in the joint embedding space
         if not self.no_imgnorm:
             feat_local = l2norm(feat_local, dim=-1)
-            #feat_global = l2norm(feat_global, dim=-1)
+            # feat_global = l2norm(feat_global, dim=-1)
 
-        return feat_local.mean(1), feat_local 
+        return feat_local.mean(1), feat_local
 
     def load_state_dict(self, state_dict):
         """Copies parameters. overwritting the default one to
@@ -126,9 +126,9 @@ class EncoderImageWeightNormPrecomp(nn.Module):
 
         super(EncoderImageWeightNormPrecomp, self).load_state_dict(new_state)
 
+
 # RNN Based Language Model
 class EncoderText(nn.Module):
-
     def __init__(self, opt, vocab_size, word_dim, embed_size, num_layers,
                  use_bi_gru=False, no_txtnorm=False, pos_emb=False):
         super(EncoderText, self).__init__()
@@ -149,25 +149,13 @@ class EncoderText(nn.Module):
     def forward(self, x, lengths):
         """Handles variable size captions
         """
-        # # SCAN
-        # # Embed word ids to vectors
-        # x_ = self.embed(x)
-        # packed = pack_padded_sequence(x_, lengths, batch_first=True)
-        #
-        # # Forward propagate RNN
-        # out, _ = self.rnn(packed)
-        #
-        # # Reshape *final* output to (batch_size, hidden_size)
-        # padded = pad_packed_sequence(out, batch_first=True)
-        # s_cap_emb, s_cap_len = padded
-
         # Embed word ids to vectors
         x_emb = self.embed(x)
-        
+
         sorted_lengths, indices = torch.sort(lengths, descending=True)
         x_emb = x_emb[indices]
         inv_ix = indices.clone()
-        inv_ix[indices] = torch.arange(0,len(indices)).type_as(inv_ix)
+        inv_ix[indices] = torch.arange(0, len(indices)).type_as(inv_ix)
 
         packed = pack_padded_sequence(x_emb, sorted_lengths.data.tolist(), batch_first=True)
         if torch.cuda.device_count() > 1:
@@ -183,7 +171,7 @@ class EncoderText(nn.Module):
         ht[1] = ht[1][inv_ix]
 
         if self.use_bi_gru:
-            cap_emb = (cap_emb[:,:,:int(cap_emb.size(2)/2)] + cap_emb[:,:,int(cap_emb.size(2)/2):])/2
+            cap_emb = (cap_emb[:, :, :int(cap_emb.size(2) / 2)] + cap_emb[:, :, int(cap_emb.size(2) / 2):]) / 2
             ht = (ht[0] + ht[1]) / 2
 
         # normalization in the joint embedding space
@@ -201,6 +189,7 @@ class EncoderText(nn.Module):
 
         return ht, cap_emb, cap_len
 
+
 def func_attention(query, context, opt, smooth, eps=1e-8, weight=None):
     """
     query: (n_context, queryL, d)
@@ -208,7 +197,6 @@ def func_attention(query, context, opt, smooth, eps=1e-8, weight=None):
     """
     batch_size_q, queryL = query.size(0), query.size(1)
     batch_size, sourceL = context.size(0), context.size(1)
-
 
     # Get attention
     # --> (batch, d, queryL)
@@ -220,7 +208,7 @@ def func_attention(query, context, opt, smooth, eps=1e-8, weight=None):
 
     if opt.raw_feature_norm == "softmax":
         # --> (batch*sourceL, queryL)
-        attn = attn.view(batch_size*sourceL, queryL)
+        attn = attn.view(batch_size * sourceL, queryL)
         attn = F.softmax(attn, dim=1)
         # --> (batch, sourceL, queryL)
         attn = attn.view(batch_size, sourceL, queryL)
@@ -240,18 +228,18 @@ def func_attention(query, context, opt, smooth, eps=1e-8, weight=None):
         pass
     else:
         raise ValueError("unknown first norm type:", opt.raw_feature_norm)
-    
+
     if weight is not None:
-      attn = attn + weight
+        attn = attn + weight
 
     attn_out = attn.clone()
 
     # --> (batch, queryL, sourceL)
     attn = torch.transpose(attn, 1, 2).contiguous()
     # --> (batch*queryL, sourceL)
-    attn = attn.view(batch_size*queryL, sourceL)
+    attn = attn.view(batch_size * queryL, sourceL)
 
-    attn = F.softmax(attn*smooth, dim=1)
+    attn = F.softmax(attn * smooth, dim=1)
     # --> (batch, queryL, sourceL)
     attn = attn.view(batch_size, queryL, sourceL)
     # --> (batch, sourceL, queryL)
@@ -267,17 +255,19 @@ def func_attention(query, context, opt, smooth, eps=1e-8, weight=None):
 
     return weightedContext, attn_out
 
+
 def cosine_similarity_a2a(x1, x2, dim=1, eps=1e-8):
-    #x1: (B, n, d) x2: (B, m, d)
-    w12 = torch.bmm(x1, x2.transpose(1,2))
-    #w12: (B, n, m)
+    # x1: (B, n, d) x2: (B, m, d)
+    w12 = torch.bmm(x1, x2.transpose(1, 2))
+    # w12: (B, n, m)
 
     w1 = torch.norm(x1, 2, dim).unsqueeze(2)
     w2 = torch.norm(x2, 2, dim).unsqueeze(1)
 
-    #w1: (B, n, 1) w2: (B, 1, m)
+    # w1: (B, n, 1) w2: (B, 1, m)
     w12_norm = torch.bmm(w1, w2).clamp(min=eps)
     return w12 / w12_norm
+
 
 def cosine_similarity(x1, x2, dim=1, eps=1e-8):
     """Returns cosine similarity between x1 and x2, computed along dim."""
@@ -286,10 +276,12 @@ def cosine_similarity(x1, x2, dim=1, eps=1e-8):
     w2 = torch.norm(x2, 2, dim)
     return (w12 / (w1 * w2).clamp(min=eps))
 
+
 class ContrastiveLoss(nn.Module):
     """
     Compute contrastive loss
     """
+
     def __init__(self, opt, margin=0, max_violation=False):
         super(ContrastiveLoss, self).__init__()
         self.opt = opt
@@ -322,10 +314,12 @@ class ContrastiveLoss(nn.Module):
             cost_im = cost_im.max(0)[0]
         return cost_s.sum() + cost_im.sum()
 
+
 class SCAN(nn.Module):
     """
     Stacked Cross Attention Network (SCAN) model
     """
+
     def __init__(self, opt):
         super(SCAN, self).__init__()
         # Build Models
@@ -334,10 +328,10 @@ class SCAN(nn.Module):
                                     precomp_enc_type=opt.precomp_enc_type,
                                     no_imgnorm=opt.no_imgnorm)
         self.txt_enc = EncoderText(opt, opt.vocab_size, opt.word_dim,
-                                   opt.embed_size, opt.num_layers, 
-                                   use_bi_gru=opt.bi_gru,  
+                                   opt.embed_size, opt.num_layers,
+                                   use_bi_gru=opt.bi_gru,
                                    no_txtnorm=opt.no_txtnorm)
-        
+
         print("*********using gate to fusion information**************")
         self.linear_t2i = nn.Linear(opt.embed_size * 2, opt.embed_size)
         self.gate_t2i = nn.Linear(opt.embed_size * 2, opt.embed_size)
@@ -352,7 +346,7 @@ class SCAN(nn.Module):
         output = input_0 * gate + input_1 * (1 - gate)
 
         return output
-    
+
     def gated_memory_i2t(self, input_0, input_1):
 
         input_cat = torch.cat([input_0, input_1], 2)
@@ -404,7 +398,7 @@ class SCAN(nn.Module):
         img_fc, img_emb, ht, cap_emb, cap_lens = self.forward_emb(images, captions, lengths, masks)
         scores = self.forward_score(img_fc, img_emb, ht, cap_emb, cap_lens)
         return scores
-    
+
     def xattn_score_Text_IMRAM(self, images_fc, images, caption_ht, captions_all, cap_lens, opt):
         """
         Images: (n_image, n_regions, d) matrix of images
@@ -424,7 +418,7 @@ class SCAN(nn.Module):
             cap_i = captions_all[i, :n_word, :].unsqueeze(0).contiguous()
             # --> (n_image, n_word, d)
             cap_i_expand = cap_i.repeat(n_image, 1, 1)
-            
+
             query = cap_i_expand
             context = images
             weight = 0
@@ -449,9 +443,9 @@ class SCAN(nn.Module):
                 continue
             similarities_one = torch.cat(similarities[j], 1).double()
             if self.training:
-                similarities_one = similarities_one.transpose(0,1)
+                similarities_one = similarities_one.transpose(0, 1)
             new_similarities.append(similarities_one)
-        
+
         return new_similarities
 
     def xattn_score_Image_IMRAM(self, images_fc, images, caption_ht, captions_all, cap_lens, opt):
@@ -475,7 +469,7 @@ class SCAN(nn.Module):
             cap_i_expand = cap_i.repeat(n_image, 1, 1)
             cap_h_i = caption_ht[i].unsqueeze(0).unsqueeze(0).contiguous()
             cap_h_i_expand = cap_h_i.expand_as(images)
-            
+
             query = images
             context = cap_i_expand
             weight = 0
@@ -499,7 +493,7 @@ class SCAN(nn.Module):
                 continue
             similarities_one = torch.cat(similarities[j], 1).double()
             if self.training:
-                similarities_one = similarities_one.transpose(0,1)
+                similarities_one = similarities_one.transpose(0, 1)
             new_similarities.append(similarities_one)
 
         return new_similarities
@@ -535,13 +529,13 @@ class SCAN(nn.Module):
             weiContext = weiContext.contiguous()
 
             weiContext_a2a.append(cap_i_expand.double() + weiContext.double())
-                
+
             row_sim = cosine_similarity(cap_i_expand.double(), weiContext.double(), dim=2)
 
             if opt.agg_func == 'LogSumExp':
                 row_sim.mul_(opt.lambda_lse).exp_()
                 row_sim = row_sim.sum(dim=1, keepdim=True)
-                row_sim = torch.log(row_sim)/opt.lambda_lse
+                row_sim = torch.log(row_sim) / opt.lambda_lse
             elif opt.agg_func == 'Max':
                 row_sim = row_sim.max(dim=1, keepdim=True)[0]
             elif opt.agg_func == 'Sum':
@@ -555,8 +549,8 @@ class SCAN(nn.Module):
         # (n_image, n_caption)
         similarities = torch.cat(similarities, 1).double()
         if self.training:
-            similarities = similarities.transpose(0,1)
-        
+            similarities = similarities.transpose(0, 1)
+
         return similarities, weiContext_a2a
 
     def xattn_score_i2t(self, images_fc, images, caption_ht, captions_all, cap_lens, opt):
@@ -588,15 +582,15 @@ class SCAN(nn.Module):
                 attn: (n_image, n_word, n_region)
             """
             weiContext, attn = func_attention(images, cap_i_expand, opt, smooth=opt.lambda_softmax)
-            
+
             weiContext_a2a.append(weiContext.double() + images.double())
-            
+
             # (n_image, n_region)
             row_sim = cosine_similarity(images, weiContext, dim=2)
             if opt.agg_func == 'LogSumExp':
                 row_sim.mul_(opt.lambda_lse).exp_()
                 row_sim = row_sim.sum(dim=1, keepdim=True)
-                row_sim = torch.log(row_sim)/opt.lambda_lse
+                row_sim = torch.log(row_sim) / opt.lambda_lse
             elif opt.agg_func == 'Max':
                 row_sim = row_sim.max(dim=1, keepdim=True)[0]
             elif opt.agg_func == 'Sum':
@@ -610,5 +604,5 @@ class SCAN(nn.Module):
         # (n_image, n_caption)
         similarities = torch.cat(similarities, 1).double()
         if self.training:
-            similarities = similarities.transpose(0,1)
+            similarities = similarities.transpose(0, 1)
         return similarities, weiContext_a2a

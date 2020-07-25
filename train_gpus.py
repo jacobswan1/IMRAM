@@ -114,18 +114,18 @@ def main():
 
         print("-------- performance at epoch: %d --------" % (epoch))
         # evaluate on validation set
-        # rsum = evalrank(model.module, val_loader, opt)
-        # #rsum = -100
+        rsum = evalrank(model.module, val_loader, opt)
+        #rsum = -100
         filename = 'model_' + str(epoch) + '.pth.tar'
-        # # remember best R@ sum and save checkpoint
-        # is_best = rsum > best_rsum
-        # best_rsum = max(rsum, best_rsum)
-        # save_checkpoint({
-        #     'epoch': epoch + 1,
-        #     'model': model.state_dict(),
-        #     'best_rsum': best_rsum,
-        #     'opt': opt,
-        # }, is_best, filename=filename, prefix=opt.model_name + '/')
+        # remember best R@ sum and save checkpoint
+        is_best = rsum > best_rsum
+        best_rsum = max(rsum, best_rsum)
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'model': model.state_dict(),
+            'best_rsum': best_rsum,
+            'opt': opt,
+        }, is_best, filename=filename, prefix=opt.model_name + '/')
         save_checkpoint({
             'epoch': epoch + 1,
             'model': model.state_dict(),

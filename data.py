@@ -27,7 +27,8 @@ class PrecompDataset(data.Dataset):
                 self.captions.append(line.strip())
 
         # Image features
-        self.images = np.load(loc+'%s_feat.npy' % data_split)
+        # self.images = np.load(loc+'%s_feat.npy' % data_split)
+        self.images = np.load(loc+'%s_ims.npy' % data_split)
         self.length = len(self.captions)
         
         print("split: %s, total images: %d, total captions: %d" % (data_split, self.images.shape[0], self.length))

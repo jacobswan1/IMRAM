@@ -149,6 +149,18 @@ class EncoderText(nn.Module):
     def forward(self, x, lengths):
         """Handles variable size captions
         """
+        # # SCAN
+        # # Embed word ids to vectors
+        # x_ = self.embed(x)
+        # packed = pack_padded_sequence(x_, lengths, batch_first=True)
+        #
+        # # Forward propagate RNN
+        # out, _ = self.rnn(packed)
+        #
+        # # Reshape *final* output to (batch_size, hidden_size)
+        # padded = pad_packed_sequence(out, batch_first=True)
+        # s_cap_emb, s_cap_len = padded
+
         # Embed word ids to vectors
         x_emb = self.embed(x)
         

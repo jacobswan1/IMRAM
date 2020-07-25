@@ -18,7 +18,7 @@ def main():
                         help='path to model')
     parser.add_argument('--split', default='test',
                         help='val/test')
-    parser.add_argument('--gpuid', default=0., type=str,
+    parser.add_argument('--gpuid', default=1., type=str,
                         help='gpuid')
     parser.add_argument('--fold5', action='store_true',
                         help='fold5')

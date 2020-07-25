@@ -38,15 +38,18 @@ def main():
     # Load Vocabulary Wrapper
     vocab = deserialize_vocab(os.path.join(opt.vocab_path, '%s_vocab.json' % opt.data_name))
     opt.vocab_size = len(vocab)
+    print("Vocab loaded, size:{}".format(len(vocab)))
 
     # Load data loaders
     train_loader, val_loader = data.get_loaders(
         opt.data_name, vocab, opt.batch_size, opt.workers, opt)
+    print('Dataloader done.')
 
     # Construct the model
     model = SCAN(opt)
     model.cuda()
     model = nn.DataParallel(model)
+    print('Model Defined.')
 
      # Loss and Optimizer
     criterion = ContrastiveLoss(opt=opt, margin=opt.margin, max_violation=opt.max_violation)
@@ -70,7 +73,8 @@ def main():
                   .format(opt.resume, start_epoch, best_rsum))
         else:
             print("=> no checkpoint found at '{}'".format(opt.resume))
-    evalrank(model.module, val_loader, opt)
+
+    # evalrank(model.module, val_loader, opt)
 
     print(opt, flush=True)
     
@@ -105,24 +109,29 @@ def main():
                             i, len(train_loader), loss.data.item(), run_time / 100)
                 print(log, flush=True)
                 run_time = 0
-            if (i + 1) % opt.val_step == 0:
-                evalrank(model.module, val_loader, opt)
+            # if (i + 1) % opt.val_step == 0:
+            #     evalrank(model.module, val_loader, opt)
 
         print("-------- performance at epoch: %d --------" % (epoch))
         # evaluate on validation set
-        rsum = evalrank(model.module, val_loader, opt)
-        #rsum = -100
+        # rsum = evalrank(model.module, val_loader, opt)
+        # #rsum = -100
         filename = 'model_' + str(epoch) + '.pth.tar'
-        # remember best R@ sum and save checkpoint
-        is_best = rsum > best_rsum
-        best_rsum = max(rsum, best_rsum)
+        # # remember best R@ sum and save checkpoint
+        # is_best = rsum > best_rsum
+        # best_rsum = max(rsum, best_rsum)
+        # save_checkpoint({
+        #     'epoch': epoch + 1,
+        #     'model': model.state_dict(),
+        #     'best_rsum': best_rsum,
+        #     'opt': opt,
+        # }, is_best, filename=filename, prefix=opt.model_name + '/')
         save_checkpoint({
             'epoch': epoch + 1,
             'model': model.state_dict(),
             'best_rsum': best_rsum,
             'opt': opt,
-        }, is_best, filename=filename, prefix=opt.model_name + '/')
-
+        }, False, filename=filename, prefix=opt.model_name + '/')
 
 def save_checkpoint(state, is_best, filename='model.pth.tar', prefix=''):
     tries = 15
